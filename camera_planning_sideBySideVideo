@@ -1,0 +1,119 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon March 13 2017
+
+@author: Lili
+
+side by side video from predicted camera planning and human operator
+"""
+
+import numpy as np
+import cv2
+import argparse
+import os
+
+#parser = argparse.ArgumentParser()
+#parser.add_argument('--file1', type = str, required = True)
+#parser.add_argument('--file2', type = str, required = True)
+#parser.add_argument('--start_frame', type = int, required = True)
+#parser.add_argument('--end_frame', type = int, required = True)
+#parser.add_argument('--play_step', type = int, required = True)
+#parser.add_argument('--fps', type = float, required = True)
+#parser.add_argument('--gap', type = int, required = True)
+#parser.add_argument('--overlay_box_size', type = int, required = True)
+#parser.add_argument('--is_half_size', type = int, required = True)
+#parser.add_argument('--save_folder', type = str, required = True)
+
+
+#args = parser.parse_args()
+
+
+#file1 = args.file1
+#file2 = args.file2
+#start_frame = args.start_frame
+#end_frame = args.end_frame
+#play_step = args.play_step
+#fps = args.fps
+#gap = args.gap
+#overlay_box_size = args.overlay_box_size
+#is_half_size = args.is_half_size
+#save_folder = args.save_folder
+start_frame = 158400
+end_frame = 165598
+play_step = 2
+fps = 60
+gap = 10
+overlay_box_size = 3
+is_half_size = 1
+save_folder = 'Ours_human'
+
+
+
+
+
+rgb_image_name1 = []
+rgb_image_name2 = []
+
+path1 = '/Users/jimmy/Desktop/video_program/warpFromPanorama/warp_result_pred/'
+path2 = '/Users/jimmy/Desktop/video_program/warpFromPanorama/warp_result/'
+
+
+fns = []
+
+for i in range(start_frame, end_frame):
+    fns.append(i)
+    buf = '%08d.jpg'%i
+    rgb_image_name1.append(path1+buf)
+    rgb_image_name2.append(path2+buf)
+
+
+
+
+
+N_frame=len(rgb_image_name1)
+
+
+if not os.path.exists(save_folder):
+    os.makedirs(save_folder)
+
+
+def horizontal_concat_frames(frame1, frame2, gap):
+    h, w, c = frame1.shape
+    frame = np.zeros((h, w*2+gap, c), dtype = frame1.dtype)
+    frame[:,range(0,w),:] = frame1
+    frame[:,range(w+gap,2*w+gap),:] = frame2
+    return frame
+
+def overlay_box(frame, sz):
+    h, w, c = frame.shape
+    frame[range(0, sz),:, :] = 255
+    frame[range(h-sz, h), :, :] = 255
+    frame[:, range(0, sz), :] = 255
+    frame[:, range(w-sz, w), :] = 255    
+    return frame
+
+
+
+for i in range(0, N_frame, play_step):
+    fn = fns[i]
+    frame1 = cv2.imread(rgb_image_name1[i], flags=cv2.IMREAD_COLOR)
+    frame2 = cv2.imread(rgb_image_name2[i], flags=cv2.IMREAD_COLOR)
+    if is_half_size:
+        h, w, c = frame1.shape
+        frame1 = cv2.resize(frame1, (w/2, h/2))
+        frame2 = cv2.resize(frame2, (w/2, h/2))
+    frame1 = overlay_box(frame1, overlay_box_size)
+    frame2 = overlay_box(frame2, overlay_box_size)
+    
+    frame = horizontal_concat_frames(frame1, frame2, gap)    
+    name = save_folder + '/%08d.jpg'%fn
+    cv2.imwrite(name, frame)
+    print('save to %s\n' % name)    
+
+for cap in caps:
+    cap.release()
+cv2.destroyAllWindows()
+print('Done')
+
+    
+    
